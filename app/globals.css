@@ -142,12 +142,12 @@ h1, h2, h3, h4 {
 .bg-indigo-500\/10 { background-color: rgba(99, 102, 241, 0.1); }
 .bg-clip-text { -webkit-background-clip: text; background-clip: text; }
 .text-transparent { color: transparent; }
-.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to)); }
-.from-indigo-400 { --tw-gradient-from: #818cf8; --tw-gradient-to: rgb(129 140 248 / 0); }
-.to-purple-400 { --tw-gradient-to: #c084fc; }
-.from-indigo-500 { --tw-gradient-from: #6366f1; --tw-gradient-to: rgb(99 102 241 / 0); }
-.to-purple-600 { --tw-gradient-to: #9333ea; }
-.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-to)); }
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--gradient-from, transparent), var(--gradient-to, transparent)); }
+.from-indigo-400 { --gradient-from: #818cf8; }
+.to-purple-400 { --gradient-to: #c084fc; }
+.from-indigo-500 { --gradient-from: #6366f1; }
+.to-purple-600 { --gradient-to: #9333ea; }
+.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--gradient-from, transparent), var(--gradient-to, transparent)); }
 .sticky { position: sticky; }
 .top-4 { top: 1rem; }
 .z-50 { z-index: 50; }
