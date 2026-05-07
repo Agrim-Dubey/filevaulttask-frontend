@@ -23,6 +23,7 @@ export default function Home() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [status, setStatus] = useState("Ready to upload");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function loadFiles() {
@@ -31,9 +32,9 @@ export default function Home() {
       const res = await fetch(`${API_BASE}/files`);
       const data = await res.json();
       setFiles(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-      setStatus("Unable to load files");
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load files.");
     } finally {
       setLoading(false);
     }
@@ -49,10 +50,11 @@ export default function Home() {
 
     const formData = new FormData();
     formData.append("file", selectedFile);
+    setError("");
+    setStatus("Uploading file...");
 
     try {
       setLoading(true);
-      setStatus("Uploading file...");
       const res = await fetch(`${API_BASE}/files`, {
         method: "POST",
         body: formData,
@@ -60,17 +62,18 @@ export default function Home() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Upload failed");
+        throw new Error(errorData.message || "Upload failed.");
       }
 
-      setStatus("Upload complete");
+      setStatus("Upload complete.");
       setSelectedFile(null);
       await loadFiles();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setStatus(error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        setStatus("Upload failed.");
       } else {
-        setStatus("Upload failed");
+        setError("Upload failed.");
       }
     } finally {
       setLoading(false);
@@ -80,6 +83,9 @@ export default function Home() {
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this file?")) return;
 
+    setError("");
+    setStatus("Deleting file...");
+
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE}/files/${id}`, {
@@ -88,16 +94,17 @@ export default function Home() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Delete failed");
+        throw new Error(errorData.message || "Delete failed.");
       }
 
-      setStatus("File deleted");
+      setStatus("File deleted.");
       await loadFiles();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setStatus(error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        setStatus("Delete failed.");
       } else {
-        setStatus("Delete failed");
+        setError("Delete failed.");
       }
     } finally {
       setLoading(false);
@@ -106,73 +113,77 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-500">FileVault</p>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Simple file upload</h1>
-            </div>
-            <p className="text-sm text-slate-500">Connected to backend at <span className="font-medium text-slate-900">filevaulttask.onrender.com</span></p>
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-4 py-10">
+        <div className="rounded-[32px] border border-slate-200 bg-white/95 p-8 shadow-sm shadow-slate-100 backdrop-blur-xl">
+          <div className="mb-8 space-y-3">
+            <p className="text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">FileVault</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Upload files with confidence</h1>
+            <p className="max-w-2xl text-sm leading-6 text-slate-600">
+              Minimal interface. Real backend connection to <span className="font-semibold text-slate-900">filevaulttask.onrender.com</span>.
+            </p>
           </div>
 
           <form onSubmit={handleUpload} className="space-y-4">
-            <label className="block text-sm font-medium text-slate-700">Choose a file</label>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <input
-                type="file"
-                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-              />
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+              <label className="flex min-h-[56px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-700 shadow-sm transition hover:border-slate-300">
+                <span className="truncate text-sm text-slate-600">{selectedFile ? selectedFile.name : "No file chosen"}</span>
+                <input
+                  type="file"
+                  onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+                  className="sr-only"
+                />
+              </label>
+
               <button
                 type="submit"
                 disabled={!selectedFile || loading}
-                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-14 rounded-2xl bg-slate-900 px-6 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Processing..." : "Upload"}
+                {loading ? "Uploading..." : "Upload"}
               </button>
             </div>
-            <p className="text-sm text-slate-500">{status}</p>
+
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <p className={error ? "text-rose-600" : "text-slate-500"}>{error || status}</p>
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-slate-600">{files.length} files</span>
+            </div>
           </form>
         </div>
 
-        <section className="space-y-4">
-          <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+        <section className="mt-8 rounded-[28px] border border-slate-200 bg-white/95 p-6 shadow-sm shadow-slate-100">
+          <div className="mb-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Files</p>
-              <h2 className="text-xl font-semibold text-slate-900">Uploaded items</h2>
+              <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Files</p>
+              <h2 className="text-lg font-semibold text-slate-900">Uploaded items</h2>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">{files.length} files</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">{files.length}</span>
           </div>
 
           {loading && files.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">Loading files…</div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-500">Loading files…</div>
           ) : files.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">No files uploaded yet.</div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-500">No files uploaded yet.</div>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y divide-slate-200">
               {files.map((file) => (
-                <div key={file._id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900">{file.originalname}</p>
-                    <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-500">
-                      <span>{formatSize(file.size)}</span>
-                      <span>{new Date(file.createdAt).toLocaleString()}</span>
-                    </div>
+                <div key={file._id} className="flex flex-col gap-4 border-b border-slate-100 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900">{file.originalname}</p>
+                    <p className="mt-1 text-xs text-slate-500">{formatSize(file.size)} · {new Date(file.createdAt).toLocaleString()}</p>
                   </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-0">
+                  <div className="flex flex-wrap gap-2">
                     <a
                       href={`${API_BASE}/uploads/${file.filename}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
                     >
                       Download
                     </a>
                     <button
                       type="button"
                       onClick={() => handleDelete(file._id)}
-                      className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+                      className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
                     >
                       Delete
                     </button>
